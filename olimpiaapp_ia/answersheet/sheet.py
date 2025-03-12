@@ -3,7 +3,8 @@ from reportlab.lib.pagesizes import letter
 
 
 class AnswerSheet:
-    def __init__(self, num_questions: int, num_options: int, filename: str):
+    def __init__(self, num_questions: int, num_options: int, 
+                 filename: str = "sheet.pdf"):
         """
         docstring
         """
@@ -48,10 +49,10 @@ class AnswerSheet:
         column_split = 30
         column_gap = 300
 
-        self.canvas.setFont("Helvetica", 12)
         for i in range(self.num_questions):
             column_offset = 0 if i < column_split else column_gap
             y_pos = height - margin_y - ((i % column_split) * spacing_y)
+            self.canvas.setFont("Helvetica", 12)
             self.canvas.drawString(margin_x + column_offset - 10, y_pos - 5, f"{i+1}")
             
             for j in range(self.num_options):

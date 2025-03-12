@@ -3,7 +3,7 @@ from answersheet import AnswerSheet
 
 def main() -> None:
     sheet = AnswerSheet(
-        50,
+        55,
         5,
         'test1.pdf'
     )
