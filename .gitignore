@@ -1,2 +1,5 @@
+venv/
+__pycache__/
+
 # ignore Windows folder icon
 desktop.ini
