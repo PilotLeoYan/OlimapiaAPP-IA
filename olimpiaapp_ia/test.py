@@ -3,9 +3,10 @@ from answersheet import AnswerSheet
 
 def main() -> None:
     sheet = AnswerSheet(
-        55,
-        5,
-        'test1.pdf'
+        list_codes=['juan', 'juan_2'],
+        num_questions=30,
+        num_options=5,
+        filename='test1.pdf'
     )
 
     sheet.generate()
