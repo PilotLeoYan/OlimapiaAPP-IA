@@ -3,12 +3,12 @@ from answersheet import AnswerSheet
 
 def main() -> None:
     sheet = AnswerSheet(
-        list_codes=['juan', 'juan_2'],
-        num_questions=30,
-        num_options=5,
-        filename='test1.pdf'
+        ['juan'],
+        32 * 2 + 1,
+        5
     )
 
+    sheet.addTitle('Hola mundo')
     sheet.generate()
     sheet.save()
 

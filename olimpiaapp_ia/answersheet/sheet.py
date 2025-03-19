@@ -5,187 +5,182 @@ from dataclasses import dataclass
 from io import BytesIO
 from .qr import create_qr
 
-# dataclass for AnswerSheet configuration
+
 @dataclass
 class SheetConfig:
-    width: int # sheet width
-    height: int # sheet height
-    margin_x: int # left margin
-    margin_y: int # top margin
-    circle_diameter: int # diameter of each circle
-    circle_x_corec: int # correction 
-    spacing_x: int # space between question options
-    spacing_y: int # space between each question on the same column
-    num_column: int # number of each column for each page
-    column_split: int # max number of questions per column
-    column_gap: int # space between each column
-    max_question_page: int # maximum number of questions per page
-    space_number_option: int # space between question number and its options
-    qr_width: int 
+    width: int  # Sheet width
+    height: int  # Sheet height
+    margin_x: int
+    margin_y: int
+    fontname: str
+    fontsize: int
+    spacing_x: int
+    spacing_y: int
+    circle_diameter: int
+    circle_y_offset: int
+    option_spacing: int
+    questions_per_column: int
+    max_questions_per_page: int
+    qr_width: int
     qr_height: int
 
 
 class AnswerSheet:
-    def __init__(self, list_codes: list[str] | tuple[str], num_questions: int, 
-                 num_options: int, filename: str = "sheet.pdf",
-                 warning_message: str = 'No dibujar aqui.'):
-        """
-        docstring
-        """
+    def __init__(self, list_codes: list[str] | tuple[str], num_questions: int,
+                 num_options: int, 
+                 fontname: str = 'Times-Roman', fontsize: int = 12):
 
-        # list_codes validation
-        if not isinstance(list_codes, (list, tuple)):
-            raise TypeError(f"List of codes must be a list or tuple, not {type(list_codes).__name__}")
+        self.list_codes = list_codes
+        self.n_questions = num_questions
+        self.n_options = num_options
 
-        # num_questions validation
-        if not isinstance(num_questions, int):
-            raise TypeError(f"Number of questions must be an integer, not {type(num_questions).__name__}.")
-        if num_questions < 1:
-            raise ValueError("Number of questions must be greater than 0.")
-        
-        # num_options validation
-        if not isinstance(num_options, int):
-            raise TypeError(f"Number of options must be an integer, not {type(num_options).__name__}.")
-        if num_options < 1:
-            raise Exception("Number of options must be greater than 0.")
-        
-        # filename validation
-        if not isinstance(filename, str):
-            raise ValueError(f"filename is must be a string, not {type(filename).__name__}.")
-        
-        self.list_codes = tuple(list_codes)
-        self.num_questions = num_questions
-        self.num_options = num_options
-        self.filename = filename
-        self.warning_msg = warning_message
+        self.title: None | str = None
+        self._title: bool = False
 
-        # set init config
-        self.canvas = canvas.Canvas(self.filename, pagesize=letter)
-        self.config: SheetConfig = SheetConfig(
+        self.canvas = canvas.Canvas('test.pdf', letter)
+        self.config = SheetConfig(
             width=letter[0],
             height=letter[1],
-            margin_x=60,
-            margin_y=80,
-            circle_diameter=9,
-            circle_x_corec=3,
-            spacing_x=40,
+            margin_x=24,
+            margin_y=24,
+            fontname=fontname,
+            fontsize=fontsize,
             spacing_y=42,
-            num_column=2,
-            column_split=16,
-            column_gap=270,
-            max_question_page=30,
-            space_number_option=20,
+            circle_diameter=9,
+            option_spacing=40,
             qr_width=70,
-            qr_height=70
+            qr_height=70,
+            # - - -
+            spacing_x=None,
+            questions_per_column=None,
+            max_questions_per_page=None,
+            circle_y_offset=None,
         )
 
-    def __str__(self) -> str:
-        raise NotImplementedError()
-    
-    def encrypt_code(self, code: str, first_question_number: int, last_question_number: int) -> str:
-        """
-        docstring
-        """
-        return f'{code},{first_question_number},{last_question_number};'
+        self.config.spacing_x = ((self.config.width - 2 * self.config.margin_x) // 2 + 1 + self.config.fontsize - (self.n_options * (self.config.circle_diameter + self.config.option_spacing))) // 2
+        self.config.questions_per_column = int((self.config.height - 2 * self.config.margin_y) // (self.config.spacing_y))
+        self.config.max_questions_per_page = 2 * self.config.questions_per_column - 2
+        self.config.circle_y_offset = self.config.fontsize - self.config.circle_diameter + 1
+
+    def __drawTitle__(self) -> None:
+        if not self._title:
+            return
+        
+        titlesize = 26
+        
+        # title area
+        self.canvas.drawBoundary(
+            sb=0.5, 
+            x1=self.config.margin_x,
+            y1=self.config.height - self.config.margin_y,
+            width=self.config.width - 2 * self.config.margin_x,
+            height=- 2 * titlesize
+        )
+
+        self.canvas.setFont(self.config.fontname, titlesize)
+        self.canvas.drawCentredString(
+            x=self.config.width // 2,
+            y=self.config.height - self.config.margin_y - titlesize,
+            text=self.title
+        )
+
+        self.canvas.setFont(self.config.fontname, self.config.fontsize)
+
+    def __drawPageFormat__(self) -> None:
+        self.__drawTitle__()
+
+        # margin
+        self.canvas.drawBoundary(
+            sb=0.5, x1=self.config.margin_x, y1=self.config.margin_y,
+            width=self.config.width - 2 * self.config.margin_x,
+            height=self.config.height - 2 * self.config.margin_y
+        )
+
+        self.canvas.line(
+            x1=self.config.width // 2,
+            y1=self.config.margin_y,
+            x2=self.config.width // 2,
+            y2=self.config.height - self.config.margin_y - (26 * 2 if self._title else 0)
+        )
+
+    def __drawQRCode__(self, string: str) -> None:
+        buffer = BytesIO()
+        create_qr(f'{string}').save(buffer, format="PNG")
+        buffer.seek(0)
+
+        self.canvas.drawImage(
+            image=ImageReader(buffer),
+            x=self.config.width - self.config.margin_x - self.config.qr_width,
+            y=self.config.margin_y,
+            width=self.config.qr_width,
+            height=self.config.qr_height,
+        )
+        print(string)
+
+    def __drawQuestions__(self, code: str) -> None:
+        x_coord: int = self.config.margin_x + self.config.spacing_x
+        y_coord: int = self.config.height - self.config.margin_y - self.config.spacing_y - (26 * 2 if self._title else 0)
+        question_count: int = 0
+        start: int = 1
+
+        for i in range(1, self.n_questions + 1):
+            # draw question number
+            self.canvas.drawString(x_coord, y_coord, text=f'{i}.')
+            question_count += 1
+
+            # draw question options
+            for j in range(self.n_options):
+                x_coord += self.config.option_spacing
+                # draw question option letter
+                self.canvas.drawCentredString(x=x_coord, y=y_coord, text=chr(65 + j))
+                # draw circle
+                self.canvas.circle(x_coord, y_coord + self.config.circle_y_offset, r=self.config.circle_diameter)
+
+            # page change
+            if question_count == self.config.max_questions_per_page:
+                if i == self.n_questions:
+                    break
+
+                self.__drawQRCode__(f'{code},{start},{i + 1};')
+                start = i + 1
+
+                self.canvas.showPage()
+                self.__drawPageFormat__()
+
+                # reset values
+                x_coord = self.config.margin_x + self.config.spacing_x
+                y_coord = self.config.height - self.config.margin_y - self.config.spacing_y - (26 * 2 if self._title else 0)
+                question_count = 0
+                continue
+
+            # column change
+            if question_count == self.config.questions_per_column:
+                x_coord = self.config.width // 2 + self.config.spacing_x
+                y_coord= self.config.height - self.config.margin_y - self.config.spacing_y - (26 * 2 if self._title else 0)
+                continue
+
+            x_coord -= self.n_options * self.config.option_spacing
+            y_coord -= self.config.spacing_y
+
+        self.__drawQRCode__(f'{code},{start},{self.n_questions + 1};')
+
+    def __drawNewPage__(self, code: str) -> None:
+        self.__drawPageFormat__()
+
+        self.canvas.setFont(self.config.fontname, self.config.fontsize)
+        self.__drawQuestions__(code)
+
+    def addTitle(self, title: str) -> None:
+        self.title = title
+        self._title = True
+
+        self.config.questions_per_column -= 1
+        self.config.max_questions_per_page -= 2
 
     def generate(self) -> None:
-        """
-        docstring
-        """
-
-        def insert_qr(code: str) -> None:
-            buffer = BytesIO()
-            create_qr(f'{code}').save(buffer, format="PNG")
-            buffer.seek(0)
-
-            self.canvas.drawBoundary(
-                sb=1,
-                x1=self.config.width - self.config.column_gap, 
-                y1=self.config.margin_y - 10,
-                width=self.config.column_gap - self.config.margin_x, 
-                height=self.config.qr_height
-            )
-
-            self.canvas.drawString(
-                x=self.config.width - self.config.column_gap + 10,
-                y=self.config.margin_y - 10 + (self.config.qr_height / 2) - 6,
-                text=f'{self.warning_msg}',
-            )
-            
-            self.canvas.drawImage(
-                image=ImageReader(buffer),
-                x=self.config.width - self.config.margin_x - self.config.qr_width,
-                y=self.config.margin_y - 10,
-                width=self.config.qr_width,
-                height=self.config.qr_height,
-            )
-
-        # for each code, generate their own page of answers
         for code in self.list_codes:
-            
-            coord_x: int = self.config.margin_x # first column
-            coord_y: int = self.config.height - self.config.margin_y
-            count_column: int = 0
-            first_q, last_q = 1, 0
-
-            for i in range(self.num_questions):
-                count_column += 1
-                # print question number
-                self.canvas.setFont("Helvetica", 12)
-                self.canvas.drawString(
-                    x=coord_x,
-                    y=coord_y,
-                    text=f'{i + 1}.'
-                )
-
-                # print question options
-                coord_x += self.config.space_number_option + 30
-                for j in range(self.num_options):
-                    self.canvas.circle(
-                        x_cen=coord_x, 
-                        y_cen=coord_y + 3, 
-                        r=self.config.circle_diameter
-                    )
-                    
-                    self.canvas.drawCentredString(
-                        x=coord_x, 
-                        y=coord_y,
-                        text=chr(65 + j)
-                    )
-                    coord_x += self.config.spacing_x
-
-                # page change
-                if (i + 1) % self.config.max_question_page == 0:
-                    insert_qr(self.encrypt_code(code, first_q, i + 2))
-
-                    if (i + 1) == self.num_questions:
-                        break
-
-                    count_column = 0
-                    first_q = i + 2
-                    # reset cordenates
-                    coord_x: int = self.config.margin_x
-                    coord_y: int = self.config.height - self.config.margin_y
-                    self.canvas.showPage()
-                    continue
-
-                # fix coords
-                coord_x -= self.config.space_number_option + 30 + (self.num_options * self.config.spacing_x)
-                coord_y -= self.config.spacing_y
-
-                # column change
-                if count_column == self.config.column_split:
-                    count_column = 0
-                    coord_x += self.config.column_gap
-                    coord_y = self.config.height - self.config.margin_y # reset
-
-            insert_qr(self.encrypt_code(code, first_q, i + 2))
-
+            self.__drawNewPage__(code)
             self.canvas.showPage()
 
     def save(self) -> None:
-        """
-        docstring
-        """
-        
         self.canvas.save()
