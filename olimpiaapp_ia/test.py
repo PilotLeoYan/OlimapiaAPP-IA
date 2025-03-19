@@ -8,7 +8,7 @@ def main() -> None:
         5
     )
 
-    sheet.addTitle('Titulo aqui')
+    #sheet.addTitle('Titulo aqui')
     sheet.addLogo(r'./logo.png')
     sheet.generate()
     sheet.save()
