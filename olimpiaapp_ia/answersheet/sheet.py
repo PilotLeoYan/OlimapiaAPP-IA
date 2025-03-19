@@ -37,6 +37,9 @@ class AnswerSheet:
         self.title: None | str = None
         self._title: bool = False
 
+        self.logo: None | str = None
+        self._logo: bool = False
+
         self.canvas = canvas.Canvas('test.pdf', letter)
         self.config = SheetConfig(
             width=letter[0],
@@ -86,8 +89,30 @@ class AnswerSheet:
 
         self.canvas.setFont(self.config.fontname, self.config.fontsize)
 
+    def __drawLogo__(self) -> None:
+        if not self._logo:
+            return
+
+        if self._title:
+            self.canvas.drawImage(
+                self.logo, 
+                x=self.config.margin_x,
+                y=self.config.height - self.config.margin_y - 26 * 2,
+                width=26 * 2,
+                height=26 * 2
+            )
+        else:
+            self.canvas.drawImage(
+                self.logo, 
+                x=self.config.width // 2 + self.config.spacing_x,
+                y=self.config.margin_y + 26 // 2,
+                width=26 * 2,
+                height=26 * 2
+            )
+
     def __drawPageFormat__(self) -> None:
         self.__drawTitle__()
+        self.__drawLogo__()
 
         # margin
         self.canvas.drawBoundary(
@@ -110,8 +135,8 @@ class AnswerSheet:
 
         self.canvas.drawImage(
             image=ImageReader(buffer),
-            x=self.config.width - self.config.margin_x - self.config.qr_width,
-            y=self.config.margin_y,
+            x=self.config.width - self.config.margin_x - self.config.qr_width - 2 * self.config.spacing_x,
+            y=self.config.margin_y + 26 // 2,
             width=self.config.qr_width,
             height=self.config.qr_height,
         )
@@ -176,6 +201,10 @@ class AnswerSheet:
 
         self.config.questions_per_column -= 1
         self.config.max_questions_per_page -= 2
+
+    def addLogo(self, logo_path: str) -> None:
+        self.logo = logo_path
+        self._logo = True
 
     def generate(self) -> None:
         for code in self.list_codes:
