@@ -80,7 +80,7 @@ class AnswerSheet:
         self.canvas.setFont(self.config.fontname, titlesize)
         self.canvas.drawCentredString(
             x=self.config.width // 2,
-            y=self.config.height - self.config.margin_y - titlesize,
+            y=self.config.height - self.config.margin_y - titlesize - 10,
             text=self.title
         )
 

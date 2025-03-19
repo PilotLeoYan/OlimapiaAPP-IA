@@ -8,7 +8,7 @@ def main() -> None:
         5
     )
 
-    sheet.addTitle('Hola mundo')
+    sheet.addTitle('Titulo aqui')
     sheet.generate()
     sheet.save()
 
