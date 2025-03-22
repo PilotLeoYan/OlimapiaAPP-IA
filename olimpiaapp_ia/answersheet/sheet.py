@@ -158,13 +158,13 @@ Optional configuration
         titlesize = 26
         
         # title area
-        self.canvas.drawBoundary(
-            sb=0.5, 
-            x1=self.config.margin_x,
-            y1=self.config.height - self.config.margin_y,
-            width=self.config.width - 2 * self.config.margin_x,
-            height=- 2 * titlesize
-        )
+        #self.canvas.drawBoundary(
+        #    sb=0.5, 
+        #    x1=self.config.margin_x,
+        #    y1=self.config.height - self.config.margin_y,
+        #    width=self.config.width - 2 * self.config.margin_x,
+        #    height=- 2 * titlesize
+        #)
 
         self.canvas.setFont(self.config.fontname, titlesize)
         self.canvas.drawCentredString(
