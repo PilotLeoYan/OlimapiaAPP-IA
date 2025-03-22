@@ -247,7 +247,6 @@ Optional configuration
             width=self.config.qr_width,
             height=self.config.qr_height,
         )
-        print(string)
 
     def __drawQuestions__(self, code: str) -> None:
         """
