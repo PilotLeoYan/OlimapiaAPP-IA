@@ -78,6 +78,7 @@ class AnswerSheet:
         self.list_codes = tuple(list_codes)
         self.n_questions = num_questions
         self.n_options = num_options
+        self.filename = filename
 
         self.title: None | str = None
         self._title: bool = False # check if a title is applied
@@ -85,7 +86,7 @@ class AnswerSheet:
         self.logo: None | str = None
         self._logo: bool = False # chech if a logo is apllied
 
-        self.canvas = canvas.Canvas('test.pdf', letter)
+        self.canvas = canvas.Canvas(self.filename, letter)
         self.config = SheetConfig(
             width=letter[0],
             height=letter[1],
