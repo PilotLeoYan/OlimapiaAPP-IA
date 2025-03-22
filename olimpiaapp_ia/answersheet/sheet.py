@@ -87,6 +87,7 @@ class AnswerSheet:
         self._logo: bool = False # chech if a logo is apllied
 
         self._border: bool = False
+        self._y_line: bool = False
 
         self.canvas = canvas.Canvas(self.filename, letter)
         self.config = SheetConfig(
@@ -141,7 +142,8 @@ sheet configuration
 Optional configuration
     title: {f'True, text="{self.title}"' if self._title else 'False'}
     logo: {fr'True, path="{self.logo}"' if self._logo else 'False'}
-    border: {self._border}'''
+    border: {self._border}
+    vertical line: {self._y_line}'''
         
         return s
 
@@ -215,6 +217,21 @@ Optional configuration
             height=self.config.height - 2 * self.config.margin_y
         )
 
+    def __drawVerticalLine__(self) -> None:
+        """
+        Sets a vertical line in the middle on each page of the PDF.
+        """
+
+        if not self._y_line:
+            return
+
+        self.canvas.line(
+            x1=self.config.width // 2,
+            y1=self.config.margin_y,
+            x2=self.config.width // 2,
+            y2=self.config.height - self.config.margin_y - (26 * 2 if self._title else 0)
+        )
+
     def __drawPageFormat__(self) -> None:
         """
         Sets up the page format for the answer sheet.
@@ -228,13 +245,7 @@ Optional configuration
         self.__drawLogo__()
 
         self.__drawBorder__()
-
-        self.canvas.line(
-            x1=self.config.width // 2,
-            y1=self.config.margin_y,
-            x2=self.config.width // 2,
-            y2=self.config.height - self.config.margin_y - (26 * 2 if self._title else 0)
-        )
+        self.__drawVerticalLine__()
 
     def __drawQRCode__(self, string: str) -> None:
         """
@@ -374,6 +385,13 @@ Optional configuration
         """
 
         self._border = True
+
+    def addVerticalLine(self) -> None:
+        """
+        Adds a vertical line down the center of the Answer Sheet (optional).
+        """
+
+        self._y_line = True
 
     def generate(self) -> None:
         """
