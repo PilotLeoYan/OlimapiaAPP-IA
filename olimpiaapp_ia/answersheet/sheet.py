@@ -86,6 +86,8 @@ class AnswerSheet:
         self.logo: None | str = None
         self._logo: bool = False # chech if a logo is apllied
 
+        self._border: bool = False
+
         self.canvas = canvas.Canvas(self.filename, letter)
         self.config = SheetConfig(
             width=letter[0],
@@ -198,6 +200,20 @@ Optional configuration
                 height=26 * 2
             )
 
+    def __drawBorder__(self) -> None:
+        """
+        Sets the page border on each page of the PDF.
+        """
+
+        if not self._border:
+            return
+
+        self.canvas.drawBoundary(
+            sb=0.5, x1=self.config.margin_x, y1=self.config.margin_y,
+            width=self.config.width - 2 * self.config.margin_x,
+            height=self.config.height - 2 * self.config.margin_y
+        )
+
     def __drawPageFormat__(self) -> None:
         """
         Sets up the page format for the answer sheet.
@@ -210,12 +226,7 @@ Optional configuration
         self.__drawTitle__()
         self.__drawLogo__()
 
-        # margin
-        self.canvas.drawBoundary(
-            sb=0.5, x1=self.config.margin_x, y1=self.config.margin_y,
-            width=self.config.width - 2 * self.config.margin_x,
-            height=self.config.height - 2 * self.config.margin_y
-        )
+        self.__drawBorder__()
 
         self.canvas.line(
             x1=self.config.width // 2,
@@ -353,6 +364,15 @@ Optional configuration
 
         self.logo = logo_path
         self._logo = True
+
+    def addBorder(self) -> None:
+        """
+        Adds a page border to the answer sheet (optional).
+
+        The page border is separated by margin_x and margin_y.
+        """
+
+        self._border = True
 
     def generate(self) -> None:
         """
