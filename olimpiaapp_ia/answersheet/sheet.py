@@ -141,7 +141,8 @@ sheet configuration
 Optional configuration
     title: {f'True, text="{self.title}"' if self._title else 'False'}
     logo: {fr'True, path="{self.logo}"' if self._logo else 'False'}
-'''
+    border: {self._border}'''
+        
         return s
 
     def __drawTitle__(self) -> None:
