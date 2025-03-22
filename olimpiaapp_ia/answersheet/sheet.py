@@ -29,7 +29,7 @@ class SheetConfig:
 
 class AnswerSheet:
     def __init__(self, list_codes: list[str] | tuple[str], num_questions: int | float,
-                 num_options: int | float, filename: str = 'sheet.pf',
+                 num_options: int | float, filename: str = 'sheet.pdf',
                  fontname: str = 'Times-Roman', fontsize: int | float = 12):
         """
         Initializes an AnswerSheet instance.
