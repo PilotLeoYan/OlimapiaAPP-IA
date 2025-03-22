@@ -111,6 +111,37 @@ class AnswerSheet:
         self.config.max_questions_per_page = 2 * self.config.questions_per_column - 2
         self.config.circle_y_offset = self.config.fontsize - self.config.circle_diameter + 1
 
+    def __str__(self) -> str:
+        """
+        Return str(self).
+        """
+
+        s: str = fr'''list of codes: {self.list_codes}
+number of questions: {self.n_questions}
+number of options: {self.n_options}
+filename: {self.filename}
+
+sheet configuration
+    sheet size: Letter, width={self.config.width}, height={self.config.height}
+    margin x: {self.config.margin_x}
+    margin y: {self.config.margin_y}
+    font name: "{self.config.fontname}"
+    font size: {self.config.fontsize}
+    spacing x: {self.config.spacing_x}
+    spacing y: {self.config.spacing_y}
+    circle diameter: {self.config.circle_diameter}
+    circle y offset: {self.config.circle_y_offset}
+    option spacing: {self.config.option_spacing}
+    questions per columns: {self.config.questions_per_column}
+    maximum of questions per page: {self.config.max_questions_per_page}
+    QR Code: width={self.config.qr_width}, height={self.config.qr_height}
+
+Optional configuration
+    title: {f'True, text="{self.title}"' if self._title else 'False'}
+    logo: {fr'True, path="{self.logo}"' if self._logo else 'False'}
+'''
+        return s
+
     def __drawTitle__(self) -> None:
         """
         Sets a title at the top center of each sheet. 
