@@ -11,6 +11,7 @@ sheet.addTitle('Release v1.0.0')
 sheet.addLogo(r'./logo.png')
 #sheet.addBorder()
 #sheet.addVerticalLine()
+#sheet.addNumeration()
 
 print(sheet)
 

@@ -89,6 +89,8 @@ class AnswerSheet:
         self._border: bool = False
         self._y_line: bool = False
 
+        self.numeration: None | int = None
+
         self.canvas = canvas.Canvas(self.filename, letter)
         self.config = SheetConfig(
             width=letter[0],
@@ -227,10 +229,26 @@ Optional configuration
 
         self.canvas.line(
             x1=self.config.width // 2,
-            y1=self.config.margin_y,
+            y1=self.config.margin_y + (0 if self.numeration is None else 12),
             x2=self.config.width // 2,
             y2=self.config.height - self.config.margin_y - (26 * 2 if self._title else 0)
         )
+
+    def __drawNumeration__(self) -> None:
+        """
+        Sets a page number in each answer sheet.
+        """
+
+        if self.numeration is None:
+            return
+        
+        self.canvas.drawCentredString(
+            x=self.config.width // 2,
+            y=self.config.margin_y + 2,
+            text=f'{self.numeration}'
+        )
+
+        self.numeration += 1
 
     def __drawPageFormat__(self) -> None:
         """
@@ -246,6 +264,8 @@ Optional configuration
 
         self.__drawBorder__()
         self.__drawVerticalLine__()
+
+        self.__drawNumeration__()
 
     def __drawQRCode__(self, string: str) -> None:
         """
@@ -392,6 +412,19 @@ Optional configuration
         """
 
         self._y_line = True
+
+    def addNumeration(self, start: int = 1) -> None:
+        """
+        Adds page numbering to all pages with an increment of one (optional).
+
+        Args:
+            start (int): first number for numering (optional).
+        """
+
+        if not isinstance(start, int):
+            raise TypeError(f'Start must be a int, not {type(num_options).__name__}.')
+
+        self.numeration = start
 
     def generate(self) -> None:
         """
