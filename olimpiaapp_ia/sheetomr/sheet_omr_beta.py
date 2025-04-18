@@ -17,17 +17,9 @@ def edgeDetection(resized_image):
     img_dilation = cv2.dilate(blurred, kernel, iterations=1)  
     edged = cv2.Canny(img_dilation, 75, 200)
     
-    #Correccion de iluminacion
-    adaptive_thresh = cv2.adaptiveThreshold(blurred,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C, \
-                cv2.THRESH_BINARY_INV,9,11)
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3,3))
-    close = cv2.morphologyEx(adaptive_thresh, cv2.MORPH_CLOSE, kernel)
-    dilate = cv2.dilate(close, kernel, iterations=1)
-    result = 255 - dilate
-    
-    return edged, result
+    return edged, gray
 
-def findContours(edges_in_image, corrected_image, resized):
+def findContours(edges_in_image, gray_image, resized):
     # Encontrar contornos
     cnts = cv2.findContours(edges_in_image.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     cnts=imutils.grab_contours(cnts)
@@ -49,16 +41,20 @@ def findContours(edges_in_image, corrected_image, resized):
                 break
           
     if docCnt is not None:
+        four_point_view_paper=four_point_transform(resized, docCnt.reshape(4, 2))
         #Dibujamos el contorno
         cv2.drawContours(resized, [docCnt], -1, (0, 255, 0), 2)
         #resized = imutils.resize(resized, height=700)
         #Transformacion de perspectiva
         paper = four_point_transform(resized, docCnt.reshape(4, 2))
-        warped = four_point_transform(corrected_image, docCnt.reshape(4, 2))
-        thresh = cv2.threshold(warped, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)[1]
+        warped = four_point_transform(gray_image, docCnt.reshape(4, 2))
+        adaptive_thresh = cv2.adaptiveThreshold(warped.copy(), 255, cv2.ADAPTIVE_THRESH_MEAN_C, \
+                    cv2.THRESH_BINARY, 11, 4)
+        thresh = cv2.bitwise_not(adaptive_thresh)
 
-        return thresh
+        return thresh, four_point_view_paper
     else:
+        four_point_view_paper=four_point_transform(resized, docCnt.reshape(4, 2))
 	    #Si no se detecta el borde de la hoja (el contenido abarca toda la imagen),
 	    #se usa el borde de la imagen
         h, w = resized.shape[:2]
@@ -70,8 +66,11 @@ def findContours(edges_in_image, corrected_image, resized):
         ])
 	    #Dibujar el contorno detectado
         cv2.drawContours(resized, [docCnt], -1, (0, 255, 0), 2)
-        
-        return resized
+        warped = four_point_transform(gray_image, docCnt.reshape(4, 2))
+        adaptive_thresh = cv2.adaptiveThreshold(warped.copy(), 255, cv2.ADAPTIVE_THRESH_MEAN_C, \
+                cv2.THRESH_BINARY, 11, 4)
+        thresh = cv2.bitwise_not(adaptive_thresh)
+        return thresh, four_point_view_paper
     
 def findBubbles(edges_in_image, paper):
     cnts = cv2.findContours(edges_in_image.copy(), cv2.RETR_TREE, 
