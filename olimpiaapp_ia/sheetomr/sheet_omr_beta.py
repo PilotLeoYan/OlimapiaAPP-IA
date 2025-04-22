@@ -89,7 +89,8 @@ def cropImage(thresh_img, orig_img):
     return cropped_image_thresh, cropped_image_org 
    
 def findBubbles(thresh_img, paper):
-    cnts = cv2.findContours(thresh_img.copy(), cv2.RETR_TREE, 
+    thresh_copy=thresh_img.copy()
+    cnts = cv2.findContours(thresh_copy, cv2.RETR_TREE, 
                             cv2.CHAIN_APPROX_SIMPLE)
     cnts = imutils.grab_contours(cnts)
     questionCnts = []
@@ -97,7 +98,7 @@ def findBubbles(thresh_img, paper):
         (x,y,w,h) = cv2.boundingRect(c)
         ar = w/float(h)
         
-        if 6 <= w <= 50 and 6 <= h <= 50 and ar >=0.9 and ar <= 1.1:
+        if 20 <= w <= 70 and 20 <= h <= 70 and 0.7 <= ar <= 1.2:
             questionCnts.append(c)
 
     if len(questionCnts)>0:
