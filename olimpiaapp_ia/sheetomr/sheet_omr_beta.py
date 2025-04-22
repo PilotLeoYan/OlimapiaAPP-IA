@@ -44,7 +44,7 @@ def findContours(edges_in_image, gray_image, resized):
         four_point_view_paper=four_point_transform(resized, docCnt.reshape(4, 2))
         #Dibujamos el contorno
         cv2.drawContours(resized, [docCnt], -1, (0, 255, 0), 2)
-        #resized = imutils.resize(resized, height=700)
+        
         #Transformacion de perspectiva
         paper = four_point_transform(resized, docCnt.reshape(4, 2))
         warped = four_point_transform(gray_image, docCnt.reshape(4, 2))
@@ -71,9 +71,27 @@ def findContours(edges_in_image, gray_image, resized):
                 cv2.THRESH_BINARY, 11, 4)
         thresh = cv2.bitwise_not(adaptive_thresh)
         return thresh, four_point_view_paper
+
+def cropImage(thresh_img, orig_img):
+    top_fraction=0.12
+    bottom_fraction=0.04
+    left_fraction=0.05
+    right_fraction=0.05
+    height, width = thresh_img.shape[:2]
     
-def findBubbles(edges_in_image, paper):
-    cnts = cv2.findContours(edges_in_image.copy(), cv2.RETR_TREE, 
+    #Calcular los pixeles a cortar
+    top = int(height * top_fraction)
+    bottom = int(height * (1 - bottom_fraction))
+    left = int(width * left_fraction)
+    right = int(width * (1 - right_fraction))
+    
+    cropped_image_thresh = thresh_img[top:bottom, left:right]
+    cropped_image_org = orig_img[top:bottom, left:right]
+
+    return cropped_image_thresh, cropped_image_org 
+   
+def findBubbles(thresh_img, paper):
+    cnts = cv2.findContours(thresh_img.copy(), cv2.RETR_TREE, 
                             cv2.CHAIN_APPROX_SIMPLE)
     cnts = imutils.grab_contours(cnts)
     questionCnts = []
