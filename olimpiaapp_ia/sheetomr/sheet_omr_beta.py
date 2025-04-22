@@ -40,20 +40,17 @@ def findContours(edges_in_image, gray_image, image):
                 break
           
     if docCnt is not None:
-        four_point_view_paper=four_point_transform(image, docCnt.reshape(4, 2))
         #Dibujamos el contorno
         cv2.drawContours(image.copy(), [docCnt], -1, (0, 255, 0), 2)
         
         #Transformacion de perspectiva
-        paper = four_point_transform(image, docCnt.reshape(4, 2))
+        four_point_view_paper=four_point_transform(image, docCnt.reshape(4, 2))
         warped = four_point_transform(gray_image, docCnt.reshape(4, 2))
-        adaptive_thresh = cv2.adaptiveThreshold(warped.copy(), 255, cv2.ADAPTIVE_THRESH_MEAN_C, \
-                    cv2.THRESH_BINARY, 11, 4)
-        thresh = cv2.bitwise_not(adaptive_thresh)
+        thresh = cv2.threshold(warped.copy(), 0, 255, cv2.THRESH_BINARY_INV | 
+                       cv2.THRESH_OTSU)[1]
 
         return thresh, four_point_view_paper
     else:
-        four_point_view_paper=four_point_transform(image, docCnt.reshape(4, 2))
 	    #Si no se detecta el borde de la hoja (el contenido abarca toda la imagen),
 	    #se usa el borde de la imagen
         h, w = image.shape[:2]
@@ -65,6 +62,7 @@ def findContours(edges_in_image, gray_image, image):
         ])
 	    #Dibujar el contorno detectado
         cv2.drawContours(image, [docCnt], -1, (0, 255, 0), 2)
+        four_point_view_paper=four_point_transform(image, docCnt.reshape(4, 2))
         warped = four_point_transform(gray_image, docCnt.reshape(4, 2))
         thresh = cv2.threshold(warped.copy(), 0, 255, cv2.THRESH_BINARY_INV | 
                        cv2.THRESH_OTSU)[1]
