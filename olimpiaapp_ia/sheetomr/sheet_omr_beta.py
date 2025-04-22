@@ -6,12 +6,11 @@ import cv2
 
 def readImage(localTestImagePath):
     image = cv2.imread(localTestImagePath)
-    resized = imutils.resize(image, height=700)
-    return resized
+    return image
 
-def edgeDetection(resized_image):
+def edgeDetection(image):
     #Convertir a escala de grises y eliminar ruido
-    gray = cv2.cvtColor(resized_image, cv2.COLOR_BGR2GRAY)
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     blurred = cv2.GaussianBlur(gray, (5, 5), 0)
     kernel = np.ones((3, 3), np.uint8)
     img_dilation = cv2.dilate(blurred, kernel, iterations=1)  
@@ -19,7 +18,7 @@ def edgeDetection(resized_image):
     
     return edged, gray
 
-def findContours(edges_in_image, gray_image, resized):
+def findContours(edges_in_image, gray_image, image):
     # Encontrar contornos
     cnts = cv2.findContours(edges_in_image.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     cnts=imutils.grab_contours(cnts)
@@ -41,12 +40,12 @@ def findContours(edges_in_image, gray_image, resized):
                 break
           
     if docCnt is not None:
-        four_point_view_paper=four_point_transform(resized, docCnt.reshape(4, 2))
+        four_point_view_paper=four_point_transform(image, docCnt.reshape(4, 2))
         #Dibujamos el contorno
-        cv2.drawContours(resized, [docCnt], -1, (0, 255, 0), 2)
+        cv2.drawContours(image.copy(), [docCnt], -1, (0, 255, 0), 2)
         
         #Transformacion de perspectiva
-        paper = four_point_transform(resized, docCnt.reshape(4, 2))
+        paper = four_point_transform(image, docCnt.reshape(4, 2))
         warped = four_point_transform(gray_image, docCnt.reshape(4, 2))
         adaptive_thresh = cv2.adaptiveThreshold(warped.copy(), 255, cv2.ADAPTIVE_THRESH_MEAN_C, \
                     cv2.THRESH_BINARY, 11, 4)
@@ -54,10 +53,10 @@ def findContours(edges_in_image, gray_image, resized):
 
         return thresh, four_point_view_paper
     else:
-        four_point_view_paper=four_point_transform(resized, docCnt.reshape(4, 2))
+        four_point_view_paper=four_point_transform(image, docCnt.reshape(4, 2))
 	    #Si no se detecta el borde de la hoja (el contenido abarca toda la imagen),
 	    #se usa el borde de la imagen
-        h, w = resized.shape[:2]
+        h, w = image.shape[:2]
         docCnt = np.array([
             [[0, 0]],         # Esquina superior izquierda
             [[w-1, 0]],       # Esquina superior derecha
@@ -65,11 +64,10 @@ def findContours(edges_in_image, gray_image, resized):
             [[0, h-1]]        # Esquina inferior izquierda
         ])
 	    #Dibujar el contorno detectado
-        cv2.drawContours(resized, [docCnt], -1, (0, 255, 0), 2)
+        cv2.drawContours(image, [docCnt], -1, (0, 255, 0), 2)
         warped = four_point_transform(gray_image, docCnt.reshape(4, 2))
-        adaptive_thresh = cv2.adaptiveThreshold(warped.copy(), 255, cv2.ADAPTIVE_THRESH_MEAN_C, \
-                cv2.THRESH_BINARY, 11, 4)
-        thresh = cv2.bitwise_not(adaptive_thresh)
+        thresh = cv2.threshold(warped.copy(), 0, 255, cv2.THRESH_BINARY_INV | 
+                       cv2.THRESH_OTSU)[1]
         return thresh, four_point_view_paper
 
 def cropImage(thresh_img, orig_img):
