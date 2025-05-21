@@ -10,14 +10,14 @@ from .qr import create_qr
 class SheetConfig:
     """Configuration for the question and answer sheet in the PDF."""
 
-    width: int  # Sheet width
-    height: int  # Sheet height
+    width: float  # Sheet width
+    height: float  # Sheet height
     margin_x: int # Horizontal margin
     margin_y: int # Vertical margin
     fontname: str # Font name
     fontsize: int # Font size
-    spacing_x: int # Horizontal space between answer and sheet
-    spacing_y: int # Vertical space between each asnwer
+    spacing_x: float # Horizontal space between answer and sheet
+    spacing_y: float # Vertical space between each answer
     circle_diameter: int # Circle diameter or Burble diameter
     circle_y_offset: int # Vertical offset of the burble (correction)
     option_spacing: int # Space between each burble
@@ -28,8 +28,8 @@ class SheetConfig:
 
 
 class AnswerSheet:
-    def __init__(self, list_codes: list[str] | tuple[str], num_questions: int | float,
-                 num_options: int | float, filename: str = 'sheet.pdf',
+    def __init__(self, list_codes: list[str] | tuple[str], num_questions: int,
+                 num_options: int, filename: str = 'sheet.pdf',
                  fontname: str = 'Times-Roman', fontsize: int | float = 12):
         """
         Initializes an AnswerSheet instance.
@@ -48,31 +48,31 @@ class AnswerSheet:
         """
 
         # list of codes validation
-        if not isinstance(list_codes, (list, tuple)):
+        if not isinstance(list_codes, (list, tuple)): # type: ignore
             raise TypeError(f'List of codes must be a list or tuple, not {type(list_codes).__name__}.')
         
         # number of questions validation
-        if not isinstance(num_questions, (int, float)):
+        if not isinstance(num_questions, int): # type: ignore
             raise TypeError(f'Number of questions must be a int or float, not {type(num_questions).__name__}.')
         if num_questions < 1:
             raise ValueError(f'Numbe rof questions must be greater than 0, received {num_questions}.')
         
         # number of options validation
-        if not isinstance(num_options, (int, float)):
+        if not isinstance(num_options, int): # type: ignore
             raise TypeError(f'Number of options must be a int or float, not {type(num_options).__name__}.')
         if num_options < 1:
             raise ValueError(f'Number of options must be greater than 0, received {num_options}.')
         
         # filename or path validation
-        if not isinstance(filename, str):
+        if not isinstance(filename, str): # type: ignore
             raise TypeError(f'File name or path must be a str, not {type(filename).__name__}.')
         
         # font name validation
-        if not isinstance(fontname, str):
+        if not isinstance(fontname, str): # type: ignore
             raise TypeError(f'Font name must be a str, not {type(fontname).__name__}.')
         
         # font size validation
-        if not isinstance(fontsize, (int, float)):
+        if not isinstance(fontsize, (int, float)): # type: ignore
             raise TypeError(f'Font size must be a int or float, not {type(fontsize).__name__}.')
 
         self.list_codes = tuple(list_codes)
@@ -98,17 +98,17 @@ class AnswerSheet:
             margin_x=24,
             margin_y=24,
             fontname=fontname,
-            fontsize=fontsize,
+            fontsize=fontsize, # type: ignore
             spacing_y=42,
             circle_diameter=9,
             option_spacing=40,
             qr_width=70,
             qr_height=70,
             # - - - 
-            spacing_x=None,
-            questions_per_column=None,
-            max_questions_per_page=None,
-            circle_y_offset=None,
+            spacing_x=None, # type: ignore
+            questions_per_column=None, # type: ignore
+            max_questions_per_page=None, # type: ignore
+            circle_y_offset=None, # type: ignore
         )
 
         self.config.spacing_x = ((self.config.width - 2 * self.config.margin_x) // 2 + 1 + self.config.fontsize - (self.n_options * (self.config.circle_diameter + self.config.option_spacing))) // 2
@@ -158,21 +158,12 @@ Optional configuration
             return
         
         titlesize = 26
-        
-        # title area
-        #self.canvas.drawBoundary(
-        #    sb=0.5, 
-        #    x1=self.config.margin_x,
-        #    y1=self.config.height - self.config.margin_y,
-        #    width=self.config.width - 2 * self.config.margin_x,
-        #    height=- 2 * titlesize
-        #)
 
         self.canvas.setFont(self.config.fontname, titlesize)
         self.canvas.drawCentredString(
             x=self.config.width // 2,
             y=self.config.height - self.config.margin_y - titlesize - 10,
-            text=self.title
+            text=self.title # type: ignore
         )
 
         self.canvas.setFont(self.config.fontname, self.config.fontsize)
@@ -189,16 +180,16 @@ Optional configuration
             return
 
         if self._title:
-            self.canvas.drawImage(
-                self.logo, 
+            self.canvas.drawImage( # type: ignore
+                image=self.logo, 
                 x=self.config.margin_x,
                 y=self.config.height - self.config.margin_y - 26 * 2,
                 width=26 * 2,
                 height=26 * 2
             )
         else:
-            self.canvas.drawImage(
-                self.logo, 
+            self.canvas.drawImage( # type: ignore
+                image=self.logo, 
                 x=self.config.width // 2 + self.config.spacing_x,
                 y=self.config.margin_y + 26 // 2,
                 width=26 * 2,
@@ -213,7 +204,7 @@ Optional configuration
         if not self._border:
             return
 
-        self.canvas.drawBoundary(
+        self.canvas.drawBoundary( # type: ignore
             sb=0.5, x1=self.config.margin_x, y1=self.config.margin_y,
             width=self.config.width - 2 * self.config.margin_x,
             height=self.config.height - 2 * self.config.margin_y
@@ -283,7 +274,7 @@ Optional configuration
         create_qr(f'{string}').save(buffer, format="PNG")
         buffer.seek(0)
 
-        self.canvas.drawImage(
+        self.canvas.drawImage( # type: ignore
             image=ImageReader(buffer),
             x=self.config.width - self.config.margin_x - self.config.qr_width - 2 * self.config.spacing_x,
             y=self.config.margin_y + 26 // 2,
@@ -303,8 +294,8 @@ Optional configuration
             code (str): The unique identifier code for the answer sheet.
         """
 
-        x_coord: int = self.config.margin_x + self.config.spacing_x
-        y_coord: int = self.config.height - self.config.margin_y - self.config.spacing_y - (26 * 2 if self._title else 0)
+        x_coord: float = self.config.margin_x + self.config.spacing_x
+        y_coord: float = self.config.height - self.config.margin_y - self.config.spacing_y - (26 * 2 if self._title else 0)
         question_count: int = 0
         start: int = 1
 
@@ -319,7 +310,7 @@ Optional configuration
                 # draw question option letter
                 self.canvas.drawCentredString(x=x_coord, y=y_coord, text=chr(65 + j))
                 # draw circle
-                self.canvas.circle(x_coord, y_coord + self.config.circle_y_offset, r=self.config.circle_diameter)
+                self.canvas.circle(x_coord, y_coord + self.config.circle_y_offset, r=self.config.circle_diameter) # type: ignore
 
             # page change
             if question_count == self.config.max_questions_per_page:
@@ -421,7 +412,7 @@ Optional configuration
             start (int): first number for numering (optional).
         """
 
-        if not isinstance(start, int):
+        if not isinstance(start, int): # type: ignore
             raise TypeError(f'Start must be a int, not {type(num_options).__name__}.')
 
         self.numeration = start
