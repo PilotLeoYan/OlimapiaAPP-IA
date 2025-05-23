@@ -101,11 +101,11 @@ def split_image_into_two_vertical(cropped_img):
     part_width = width // 2
     
     parts = [
-        cropped_img[:, 0:part_width],             # First part (left)
-        cropped_img[:, part_width:2*part_width],  # Second part (right)
+        cropped_img[:, 0:part_width],             #Primera columna (izquierda)
+        cropped_img[:, part_width:2*part_width],  #Segunda columna (derecha)
     ]
 
-    #crop QR code from second part
+    #Cortar el trozo de la imagen donde esta el QR
     bottom = int(height * (1 - 0.13))
     right_cropped = parts[1][0:bottom]
     left_cropped=parts[0]
@@ -138,3 +138,75 @@ def findBubbles(thresh_img: np.ndarray[tuple[int, int], np.dtype[np.uint8]],
         return bubbles_paper
    
     return
+
+def detect_bubbles_and_answers(image):
+    gray = cv2.cvtColor(image.copy(), cv2.COLOR_BGR2GRAY)
+    blurred = cv2.GaussianBlur(gray, (3, 3), 0)
+    thresh = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY | 
+                               cv2.THRESH_OTSU)[1]
+
+    #Detectar todas las burbujas
+    circles = cv2.HoughCircles(
+        thresh,
+        cv2.HOUGH_GRADIENT,
+        dp=1.2,
+        minDist=10,
+        param1=10,
+        param2=10,
+        minRadius=6,
+        maxRadius=15
+    )
+
+    result_img = image.copy()
+    answers = {}
+    if circles is not None:
+        circles = np.round(circles[0, :]).astype("int")
+
+        #Agrupar las burbujas por filas (por coordenada y)
+        rows = {}
+        for (x, y, r) in circles:
+            row_found = False
+            for row_y in rows:
+                if abs(row_y - y) <= r*2:
+                    rows[row_y].append((x, y, r))
+                    row_found = True
+                    break
+            if not row_found:
+                rows[y] = [(x, y, r)]
+
+        for row_y in sorted(rows.keys()):
+            row_bubbles = sorted(rows[row_y], key=lambda b: b[0])
+            bubble_status = []
+
+            for (x, y, r) in row_bubbles:
+                #Crear mask para las burbujas
+                mask = np.zeros_like(gray)
+                cv2.circle(mask, (x, y), r, 255, -1)
+                roi = cv2.bitwise_and(thresh, thresh, mask=mask)
+
+                #Calcular fill_ratio
+                sqr_r=r**2
+                total_area = np.pi * sqr_r
+                filled_pixels = np.sum(roi == 255)
+                fill_ratio = filled_pixels / total_area
+                bubble_status.append((x, y, r, fill_ratio))
+        
+            #Determinar la burbuja marcada en la pregunta
+            marked_bubble = None
+            for idx, (x, y, r, fill_ratio) in enumerate(bubble_status):
+                if fill_ratio > 0.35:
+                    marked_bubble = idx
+                    break
+
+            if marked_bubble is not None:
+                answer = chr(65 + marked_bubble)  #Convertir indice a caracter A, B, C, D, E
+                if answer > "E":
+                    answer = "E"
+                answers[row_y] = answer
+                cv2.circle(result_img, (row_bubbles[marked_bubble][0], row_bubbles[marked_bubble][1]), row_bubbles[marked_bubble][2], (255, 0, 0), 3)
+                cv2.putText(result_img, answer, (row_bubbles[marked_bubble][0], row_bubbles[marked_bubble][1]), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+            else:
+                answers[row_y] = "?"  #No se detecto respuesta para esta pregunta
+                
+    return result_img, answers, thresh
