@@ -96,6 +96,27 @@ def cropImage(thresh_img: np.ndarray[tuple[int, int], np.dtype[np.uint8]],
 
     return cropped_image_thresh, cropped_image_org  # type: ignore
    
+def split_image_into_two_vertical(orig_img):
+    height, width = orig_img.shape[:2]
+    part_width = width // 2
+    
+    parts = [
+        orig_img[:, 0:part_width],             # First part (left)
+        orig_img[:, part_width:2*part_width],  # Second part (right)
+    ]
+
+    #crop QR code from second part
+    bottom = int(height * (1 - 0.13))
+    right_cropped = parts[1][0:bottom]
+    left_cropped=parts[0]
+    cropped_parts=[left_cropped,right_cropped]
+                   
+    for i, part in enumerate(cropped_parts):
+        part_filename = f'cropped_part_{i+1}.jpg'
+        cv2.imwrite(part_filename, part)
+        print(f"Saved {part_filename}")
+    return cropped_parts
+
 def findBubbles(thresh_img: np.ndarray[tuple[int, int], np.dtype[np.uint8]], 
                 paper: np.ndarray[tuple[int, int, int], np.dtype[np.uint8]]) -> np.ndarray[tuple[int, int, int], np.dtype[np.uint8]] | None:
     thresh_copy = thresh_img.copy()
