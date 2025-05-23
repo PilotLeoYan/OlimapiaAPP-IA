@@ -96,13 +96,13 @@ def cropImage(thresh_img: np.ndarray[tuple[int, int], np.dtype[np.uint8]],
 
     return cropped_image_thresh, cropped_image_org  # type: ignore
    
-def split_image_into_two_vertical(orig_img):
-    height, width = orig_img.shape[:2]
+def split_image_into_two_vertical(cropped_img):
+    height, width = cropped_img.shape[:2]
     part_width = width // 2
     
     parts = [
-        orig_img[:, 0:part_width],             # First part (left)
-        orig_img[:, part_width:2*part_width],  # Second part (right)
+        cropped_img[:, 0:part_width],             # First part (left)
+        cropped_img[:, part_width:2*part_width],  # Second part (right)
     ]
 
     #crop QR code from second part
