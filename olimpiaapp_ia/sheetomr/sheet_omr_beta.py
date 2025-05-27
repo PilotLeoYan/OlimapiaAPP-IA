@@ -9,7 +9,7 @@ import cv2
 
 
 def readImage(image_path: str) -> np.ndarray[tuple[int, int, int], np.dtype[np.uint8]]:
-    return cv2.imread(image_path) # type: ignore
+    return cv2.imread(image_path, cv2.IMREAD_REDUCED_COLOR_4) # type: ignore
 
 def edgeDetection(image: np.ndarray[tuple[int, int, int], np.dtype[np.uint8]]) -> tuple[np.ndarray[tuple[int, int], np.dtype[np.uint8]],
                                                                                         np.ndarray[tuple[int, int], np.dtype[np.uint8]]]:
@@ -59,6 +59,7 @@ def findContours(edges_in_image: np.ndarray[tuple[int, int], np.dtype[np.uint8]]
         return thresh, four_point_view_paper # type: ignore
     
     #Si no se detecta el borde de la hoja (el contenido abarca toda la imagen),
+    print('no detectado')
 	#se usa el borde de la imagen
     h, w = image.shape[:2]
     docCnt = np.array([
