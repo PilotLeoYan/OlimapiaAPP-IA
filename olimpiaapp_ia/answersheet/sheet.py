@@ -1,52 +1,14 @@
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.utils import ImageReader
-from dataclasses import dataclass
 from io import BytesIO
 from .qr import create_qr
-
-
-@dataclass
-class SheetConfig:
-    """Configuration for the question and answer sheet in the PDF."""
-
-    width: float  # Sheet width
-    height: float  # Sheet height
-    margin_x: int # Horizontal margin
-    margin_y: int # Vertical margin
-    fontname: str # Font name
-    fontsize: int # Font size
-    spacing_x: float # Horizontal space between answer and sheet
-    spacing_y: float # Vertical space between each answer
-    circle_diameter: int # Circle diameter or Burble diameter
-    circle_y_offset: int # Vertical offset of the burble (correction)
-    option_spacing: int # Space between each burble
-    questions_per_column: int # Maximun of questions per column
-    max_questions_per_page: int # Maximum questions per page
-    qr_width: int # QR code width
-    qr_height: int # QR code height
+from .sheetconfig import SheetConfig
 
 
 class AnswerSheet:
-    def __init__(self, list_codes: list[str] | tuple[str], num_questions: int,
-                 num_options: int, filename: str = 'sheet.pdf',
-                 fontname: str = 'Times-Roman', fontsize: int | float = 12):
-        """
-        Initializes an AnswerSheet instance.
-
-        Args:
-            list_codes (list[str] | tuple[str]): A list or tuple of unique codes of each applicant.
-            num_questions (int | float): The total number of questions in the sheet.
-            num_options (int | float): The number of answer options per question.
-            filename (str, optional): The name of the output PDF file. Defaults to 'sheet.pdf'.
-            fontname (str, optional): The font name used in the PDF. Defaults to 'Times-Roman'.
-            fontsize (int | float, optional): The font size used in the PDF. Defaults to 12.
-
-        Raises:
-            TypeError: If any argument does not match the expected type.
-            ValueError: If `num_questions` or `num_options` is less than 1.
-        """
-
+    def __init__(self, list_codes, num_questions, num_options, filename='sheet.pdf',
+                 fontname='Times-Roman', fontsize=12):
         # list of codes validation
         if not isinstance(list_codes, (list, tuple)): # type: ignore
             raise TypeError(f'List of codes must be a list or tuple, not {type(list_codes).__name__}.')
@@ -80,16 +42,16 @@ class AnswerSheet:
         self.n_options = num_options
         self.filename = filename
 
-        self.title: None | str = None
+        self.text_title: None | str = None
         self._title: bool = False # check if a title is applied
 
-        self.logo: None | str = None
+        self.logo_path: None | str = None
         self._logo: bool = False # chech if a logo is apllied
 
         self._border: bool = False
         self._y_line: bool = False
 
-        self.numeration: None | int = None
+        self._numeration: None | int = None
 
         self.canvas = canvas.Canvas(self.filename, letter)
         self.config = SheetConfig(
@@ -98,7 +60,7 @@ class AnswerSheet:
             margin_x=24,
             margin_y=24,
             fontname=fontname,
-            fontsize=fontsize, # type: ignore
+            fontsize=fontsize,
             spacing_y=42,
             circle_diameter=9,
             option_spacing=40,
@@ -117,10 +79,6 @@ class AnswerSheet:
         self.config.circle_y_offset = self.config.fontsize - self.config.circle_diameter + 1
 
     def __str__(self) -> str:
-        """
-        Return str(self).
-        """
-
         s: str = fr'''list of codes: {self.list_codes}
 number of questions: {self.n_questions}
 number of options: {self.n_options}
@@ -142,18 +100,14 @@ sheet configuration
     QR Code: width={self.config.qr_width}, height={self.config.qr_height}
 
 Optional configuration
-    title: {f'True, text="{self.title}"' if self._title else 'False'}
-    logo: {fr'True, path="{self.logo}"' if self._logo else 'False'}
+    title: {f'True, text="{self.text_title}"' if self._title else 'False'}
+    logo: {fr'True, path="{self.logo_path}"' if self._logo else 'False'}
     border: {self._border}
     vertical line: {self._y_line}'''
         
         return s
 
     def __drawTitle__(self) -> None:
-        """
-        Sets a title at the top center of each sheet. 
-        """
-        
         if not self._title:
             return
         
@@ -163,25 +117,18 @@ Optional configuration
         self.canvas.drawCentredString(
             x=self.config.width // 2,
             y=self.config.height - self.config.margin_y - titlesize - 10,
-            text=self.title # type: ignore
+            text=self.text_title # type: ignore
         )
 
         self.canvas.setFont(self.config.fontname, self.config.fontsize)
 
     def __drawLogo__(self) -> None:
-        """
-        Sets the logo on each page of the PDF.
-
-        If the title is applied, insert the logo at the top left of the page. 
-        If not applicable, insert the logo to the left of the QR code.
-        """
-
         if not self._logo:
             return
 
         if self._title:
             self.canvas.drawImage( # type: ignore
-                image=self.logo, 
+                image=self.logo_path, 
                 x=self.config.margin_x,
                 y=self.config.height - self.config.margin_y - 26 * 2,
                 width=26 * 2,
@@ -189,7 +136,7 @@ Optional configuration
             )
         else:
             self.canvas.drawImage( # type: ignore
-                image=self.logo, 
+                image=self.logo_path, 
                 x=self.config.width // 2 + self.config.spacing_x,
                 y=self.config.margin_y + 26 // 2,
                 width=26 * 2,
@@ -197,10 +144,6 @@ Optional configuration
             )
 
     def __drawBorder__(self) -> None:
-        """
-        Sets the page border on each page of the PDF.
-        """
-
         if not self._border:
             return
 
@@ -211,45 +154,29 @@ Optional configuration
         )
 
     def __drawVerticalLine__(self) -> None:
-        """
-        Sets a vertical line in the middle on each page of the PDF.
-        """
-
         if not self._y_line:
             return
 
         self.canvas.line(
             x1=self.config.width // 2,
-            y1=self.config.margin_y + (0 if self.numeration is None else 12),
+            y1=self.config.margin_y + (0 if self._numeration is None else 12),
             x2=self.config.width // 2,
             y2=self.config.height - self.config.margin_y - (26 * 2 if self._title else 0)
         )
 
     def __drawNumeration__(self) -> None:
-        """
-        Sets a page number in each answer sheet.
-        """
-
-        if self.numeration is None:
+        if self._numeration is None:
             return
         
         self.canvas.drawCentredString(
             x=self.config.width // 2,
             y=self.config.margin_y + 2,
-            text=f'{self.numeration}'
+            text=f'{self._numeration}'
         )
 
-        self.numeration += 1
+        self._numeration += 1
 
     def __drawPageFormat__(self) -> None:
-        """
-        Sets up the page format for the answer sheet.
-
-        This method defines the layout of the page, including margins, title (if applicable), 
-        logo (if applicable), and dividing lines. It ensures that each page follows a consistent 
-        format before drawing questions and QR codes.
-        """
-
         self.__drawTitle__()
         self.__drawLogo__()
 
@@ -259,17 +186,6 @@ Optional configuration
         self.__drawNumeration__()
 
     def __drawQRCode__(self, string: str) -> None:
-        """
-        Inserts a QR code on the answer sheet.
-
-        This method generates and places a QR code on each page of the PDF. 
-        The QR code contains the participant's unique code, the first question 
-        number on the page, and the last question number on the page.
-
-        Args:
-            string (str): The encoded information to be stored in the QR code.
-        """
-
         buffer = BytesIO()
         create_qr(f'{string}').save(buffer, format="PNG")
         buffer.seek(0)
@@ -283,17 +199,6 @@ Optional configuration
         )
 
     def __drawQuestions__(self, code: str) -> None:
-        """
-        Draws the questions and answer options on the sheet.
-
-        This method places the question numbers and corresponding answer bubbles 
-        on the answer sheet. It also handles pagination, ensuring that the questions 
-        are distributed correctly across multiple pages if needed.
-
-        Args:
-            code (str): The unique identifier code for the answer sheet.
-        """
-
         x_coord: float = self.config.margin_x + self.config.spacing_x
         y_coord: float = self.config.height - self.config.margin_y - self.config.spacing_y - (26 * 2 if self._title else 0)
         question_count: int = 0
@@ -341,101 +246,49 @@ Optional configuration
         self.__drawQRCode__(f'{code},{start},{self.n_questions + 1};')
 
     def __drawNewPage__(self, code: str) -> None:
-        """
-        Draws a new page for the answer sheet.
-
-        This method sets up the format for a new page, including margins, 
-        title (if applicable), logo (if applicable), and the question layout. 
-        It prepares the canvas for drawing the questions and QR codes.
-
-        Args:
-            code (str): The unique identifier code for the answer sheet.
-        """
-
         self.__drawPageFormat__()
 
         self.canvas.setFont(self.config.fontname, self.config.fontsize)
         self.__drawQuestions__(code)
 
-    def addTitle(self, title: str) -> None:
-        """
-        Adds a title to the answer sheet (optional).
+    @property
+    def title(self):
+        return self.text_title
 
-        This method sets a title to be displayed at the top of the answer sheet. 
-        If not called, the answer sheet will be generated without a title.
+    @title.setter
+    def title(self, title: str):
 
-        Args:
-            title (str): The title text to be added to the sheet.
-        """
-
-        self.title = title
+        self.text_title = title
         self._title = True
 
         self.config.questions_per_column -= 1
         self.config.max_questions_per_page -= 2
 
-    def addLogo(self, logo_path: str) -> None:
-        """
-        Adds a logo to the answer sheet (optional).
+    @property
+    def logo(self):
+        return self.logo_path
 
-        This method sets a logo image to be displayed on the answer sheet. 
-        If not called, the answer sheet will be generated without a logo.
-
-        Args:
-            logo_path (str): The file path of the logo image.
-        """
-
-        self.logo = logo_path
+    @logo.setter
+    def logo(self, logo_path: str):
+        self.logo_path = logo_path
         self._logo = True
 
-    def addBorder(self) -> None:
-        """
-        Adds a page border to the answer sheet (optional).
-
-        The page border is separated by margin_x and margin_y.
-        """
-
+    def border(self):
         self._border = True
 
-    def addVerticalLine(self) -> None:
-        """
-        Adds a vertical line down the center of the Answer Sheet (optional).
-        """
-
+    def verticalLine(self):
         self._y_line = True
 
-    def addNumeration(self, start: int = 1) -> None:
-        """
-        Adds page numbering to all pages with an increment of one (optional).
+    def numeration(self, start=1):
+        if not isinstance(start, int):
+            raise TypeError(f'Start must be a int, not {type(start).__name__}.')
 
-        Args:
-            start (int): first number for numering (optional).
-        """
-
-        if not isinstance(start, int): # type: ignore
-            raise TypeError(f'Start must be a int, not {type(num_options).__name__}.')
-
-        self.numeration = start
+        self._numeration = start
 
     def generate(self) -> None:
-        """
-        Generates the answer sheets for all provided codes.
-
-        Iterates through the list of codes and creates a formatted answer sheet 
-        for each, adding the necessary elements such as questions, answer options, 
-        QR codes, and page formatting.
-        """
-
         for code in self.list_codes:
             self.__drawNewPage__(code)
             self.canvas.showPage()
 
     def save(self) -> None:
-        """
-        Saves the generated answer sheet as a PDF file.
-
-        This method finalizes and writes the canvas content to the specified 
-        PDF file, making the answer sheet ready for printing or distribution.
-        """
-
         self.canvas.save()
