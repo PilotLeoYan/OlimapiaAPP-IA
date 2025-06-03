@@ -11,6 +11,11 @@ from pyzbar.pyzbar import decode
 def readImage(image_path: str) -> np.ndarray[tuple[int, int, int], np.dtype[np.uint8]]:
     return cv2.imread(image_path, cv2.IMREAD_REDUCED_COLOR_4) # type: ignore
 
+def extractQR(orig_img):
+    #Detectar codigo QR
+    qr_code=decode(orig_img)
+    return
+
 def edgeDetection(image: np.ndarray[tuple[int, int, int], np.dtype[np.uint8]]) -> tuple[np.ndarray[tuple[int, int], np.dtype[np.uint8]],
                                                                                         np.ndarray[tuple[int, int], np.dtype[np.uint8]]]:
     #Convertir a escala de grises y eliminar ruido
