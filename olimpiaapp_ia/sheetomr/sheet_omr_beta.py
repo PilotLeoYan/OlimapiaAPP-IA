@@ -6,7 +6,7 @@ from imutils import contours
 import numpy as np
 import imutils
 import cv2
-
+from pyzbar.pyzbar import decode
 
 def readImage(image_path: str) -> np.ndarray[tuple[int, int, int], np.dtype[np.uint8]]:
     return cv2.imread(image_path, cv2.IMREAD_REDUCED_COLOR_4) # type: ignore
