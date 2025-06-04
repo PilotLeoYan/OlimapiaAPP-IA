@@ -1,4 +1,5 @@
 from .sheet_omr_beta import readImage
+from .sheet_omr_beta import extractQR
 from .sheet_omr_beta import edgeDetection
 from .sheet_omr_beta import findContours
 from .sheet_omr_beta import cropImage
@@ -10,6 +11,7 @@ from .sheet_omr_beta import detect_bubbles_and_answers
 __version__ = "0.0.1"
 __all__ = [
     "readImage",
+    "extractQR",
     "edgeDetection",
     "findContours",
     "cropImage",
