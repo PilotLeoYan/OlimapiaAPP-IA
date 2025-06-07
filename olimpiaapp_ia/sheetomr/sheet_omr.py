@@ -6,17 +6,18 @@ from imutils.perspective import four_point_transform
 
 
 def readImage(path):
-    # 1000, 750, 3
-
     image = cv2.imread(path, cv2.IMREAD_REDUCED_COLOR_8)
 
     if image is None:
         raise ValueError('file could not be read, check with os.path.exists()')
     return image
 
-@FutureWarning
 def rescale(image):
-    ...
+    new_height: int = 1000
+    new_width: int = 750
+
+    new_image = cv2.resize(image, (new_width, new_height))
+    return new_image
 
 def rgb2gray(image):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
